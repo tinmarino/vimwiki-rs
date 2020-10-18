@@ -21,6 +21,8 @@ pub struct ExternalFileLink<'a> {
     pub description: Option<Description<'a>>,
 }
 
+impl_located_borrowed_owned!(ExternalFileLink);
+
 impl ExternalFileLink<'_> {
     pub fn to_borrowed(&self) -> ExternalFileLink {
         use self::Cow::*;

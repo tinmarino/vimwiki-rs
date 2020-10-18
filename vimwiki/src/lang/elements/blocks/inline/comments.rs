@@ -10,6 +10,8 @@ pub enum Comment<'a> {
     MultiLine(MultiLineComment<'a>),
 }
 
+impl_located_borrowed_owned!(Comment);
+
 impl Comment<'_> {
     pub fn to_borrowed(&self) -> Comment {
         match self {
@@ -39,6 +41,12 @@ impl Comment<'_> {
 )]
 #[display(fmt = "{}", "_0.trim()")]
 pub struct LineComment<'a>(pub Cow<'a, str>);
+
+impl_located_borrowed_owned!(
+    LineComment,
+    LineComment::into_owned,
+    LineComment::as_borrowed
+);
 
 impl LineComment<'_> {
     pub fn as_borrowed(&self) -> LineComment {
@@ -82,6 +90,8 @@ impl<'a> From<String> for LineComment<'a> {
 )]
 #[display(fmt = "{}", "_0.join(\"\n\")")]
 pub struct MultiLineComment<'a>(pub Vec<Cow<'a, str>>);
+
+impl_located_borrowed_owned!(MultiLineComment);
 
 impl MultiLineComment<'_> {
     pub fn to_borrowed(&self) -> MultiLineComment {

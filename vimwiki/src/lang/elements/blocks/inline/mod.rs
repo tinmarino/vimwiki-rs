@@ -38,6 +38,8 @@ pub enum InlineElement<'a> {
     Comment(Comment<'a>),
 }
 
+impl_located_borrowed_owned!(InlineElement);
+
 impl InlineElement<'_> {
     pub fn to_borrowed(&self) -> InlineElement {
         match self {
@@ -94,26 +96,19 @@ impl<'a> InlineElement<'a> {
     Deserialize,
 )]
 pub struct InlineElementContainer<'a> {
-    pub elements: Vec<Located<InlineElement<'a>>>,
+    pub elements: Vec<Located<'a, InlineElement<'a>>>,
 }
 
 impl InlineElementContainer<'_> {
     pub fn to_borrowed(&self) -> InlineElementContainer {
-        let elements = self
-            .elements
-            .iter()
-            .map(|x| x.as_ref().map(InlineElement::to_borrowed))
-            .collect();
+        let elements = self.elements.iter().map(|x| x.to_borrowed()).collect();
 
         InlineElementContainer { elements }
     }
 
     pub fn into_owned(self) -> InlineElementContainer<'static> {
-        let elements = self
-            .elements
-            .into_iter()
-            .map(|x| x.map(InlineElement::into_owned))
-            .collect();
+        let elements =
+            self.elements.into_iter().map(|x| x.into_owned()).collect();
 
         InlineElementContainer { elements }
     }
@@ -121,10 +116,7 @@ impl InlineElementContainer<'_> {
 
 impl<'a> InlineElementContainer<'a> {
     pub fn to_children(&'a self) -> Vec<Located<InlineElement<'a>>> {
-        self.elements
-            .iter()
-            .map(|x| x.as_ref().map(InlineElement::to_borrowed))
-            .collect()
+        self.elements.iter().map(|x| x.to_borrowed()).collect()
     }
 }
 
@@ -143,14 +135,14 @@ impl<'a> From<Vec<InlineElementContainer<'a>>> for InlineElementContainer<'a> {
     }
 }
 
-impl<'a> From<Located<InlineElement<'a>>> for InlineElementContainer<'a> {
-    fn from(element: Located<InlineElement<'a>>) -> Self {
+impl<'a> From<Located<'a, InlineElement<'a>>> for InlineElementContainer<'a> {
+    fn from(element: Located<'a, InlineElement<'a>>) -> Self {
         Self::new(vec![element])
     }
 }
 
-impl<'a> From<Located<&'a str>> for InlineElementContainer<'a> {
-    fn from(element: Located<&'a str>) -> Self {
+impl<'a> From<Located<'a, &'a str>> for InlineElementContainer<'a> {
+    fn from(element: Located<'a, &'a str>) -> Self {
         Self::from(element.map(|x| Text::from(x)))
     }
 }
@@ -165,10 +157,10 @@ macro_rules! container_mapping {
     };
 }
 
-container_mapping!(Located<CodeInline<'a>>);
-container_mapping!(Located<MathInline<'a>>);
-container_mapping!(Located<Text<'a>>);
-container_mapping!(Located<DecoratedText<'a>>);
-container_mapping!(Located<Keyword>);
-container_mapping!(Located<Link<'a>>);
-container_mapping!(Located<Tags<'a>>);
+container_mapping!(Located<'a, CodeInline<'a>>);
+container_mapping!(Located<'a, MathInline<'a>>);
+container_mapping!(Located<'a, Text<'a>>);
+container_mapping!(Located<'a, DecoratedText<'a>>);
+container_mapping!(Located<'a, Keyword>);
+container_mapping!(Located<'a, Link<'a>>);
+container_mapping!(Located<'a, Tags<'a>>);

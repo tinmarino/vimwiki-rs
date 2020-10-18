@@ -1,24 +1,33 @@
 use crate::tokens::{utils::element_path, Tokenize};
 use proc_macro2::TokenStream;
 use quote::quote;
-use vimwiki::elements::{Located, Position, Region};
+use vimwiki::elements::{LazyRegion, Located, Position, Region};
 
-impl<T: Tokenize> Tokenize for Located<T> {
+impl<'a, T: Tokenize> Tokenize for Located<'a, T> {
     fn tokenize(&self, stream: &mut TokenStream) {
         let root = element_path();
         let mut element = TokenStream::new();
         self.as_inner().tokenize(&mut element);
 
-        let region = do_tokenize!(self.region);
+        let lazy_region = do_tokenize!(&self.lazy_region());
 
         let self_stream = quote! {
-            #root::Located {
-                element: #element,
-                region: #region,
-            }
+            #root::Located::new(
+                #element,
+                #lazy_region,
+            )
         };
 
         stream.extend(std::iter::once(self_stream))
+    }
+}
+
+impl_tokenize!(tokenize_lazy_region, LazyRegion<'a>, 'a);
+fn tokenize_lazy_region<'a>(lazy_region: &LazyRegion<'a>) -> TokenStream {
+    let root = element_path();
+    let inner = tokenize_region(&(*lazy_region).into());
+    quote! {
+        #root::LazyRegion::Owned(#inner)
     }
 }
 

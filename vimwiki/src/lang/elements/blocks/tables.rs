@@ -6,29 +6,23 @@ use serde::{Deserialize, Serialize};
     Constructor, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize,
 )]
 pub struct Table<'a> {
-    pub rows: Vec<Located<Row<'a>>>,
+    pub rows: Vec<Located<'a, Row<'a>>>,
     pub centered: bool,
 }
+
+impl_located_borrowed_owned!(Table);
 
 impl Table<'_> {
     pub fn to_borrowed(&self) -> Table {
         Table {
-            rows: self
-                .rows
-                .iter()
-                .map(|x| x.as_ref().map(Row::to_borrowed))
-                .collect(),
+            rows: self.rows.iter().map(|x| x.to_borrowed()).collect(),
             centered: self.centered,
         }
     }
 
     pub fn into_owned(self) -> Table<'static> {
         Table {
-            rows: self
-                .rows
-                .into_iter()
-                .map(|x| x.map(Row::into_owned))
-                .collect(),
+            rows: self.rows.into_iter().map(|x| x.into_owned()).collect(),
             centered: self.centered,
         }
     }
@@ -57,20 +51,19 @@ impl<'a> Table<'a> {
 #[derive(Clone, Debug, From, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Row<'a> {
     /// Represents a row containing content
-    Content { cells: Vec<Located<Cell<'a>>> },
+    Content { cells: Vec<Located<'a, Cell<'a>>> },
 
     /// Represents a row purely acting as a divider, usually for headers
     Divider,
 }
 
+impl_located_borrowed_owned!(Row);
+
 impl Row<'_> {
     pub fn to_borrowed(&self) -> Row {
         match self {
             Self::Content { cells } => Row::Content {
-                cells: cells
-                    .iter()
-                    .map(|x| x.as_ref().map(Cell::to_borrowed))
-                    .collect(),
+                cells: cells.iter().map(|x| x.to_borrowed()).collect(),
             },
             Self::Divider => Row::Divider,
         }
@@ -79,10 +72,7 @@ impl Row<'_> {
     pub fn into_owned(self) -> Row<'static> {
         match self {
             Self::Content { cells } => Row::Content {
-                cells: cells
-                    .into_iter()
-                    .map(|x| x.map(Cell::into_owned))
-                    .collect(),
+                cells: cells.into_iter().map(|x| x.into_owned()).collect(),
             },
             Self::Divider => Row::Divider,
         }
@@ -107,6 +97,8 @@ pub enum Cell<'a> {
     SpanLeft,
     SpanAbove,
 }
+
+impl_located_borrowed_owned!(Cell);
 
 impl Cell<'_> {
     pub fn to_borrowed(&self) -> Cell {

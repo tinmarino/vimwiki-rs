@@ -25,6 +25,8 @@ pub struct WikiLink<'a> {
     pub anchor: Option<Anchor<'a>>,
 }
 
+impl_located_borrowed_owned!(WikiLink);
+
 impl WikiLink<'_> {
     pub fn to_borrowed(&self) -> WikiLink {
         use self::Cow::*;

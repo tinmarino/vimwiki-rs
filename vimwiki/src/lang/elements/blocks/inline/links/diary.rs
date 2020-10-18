@@ -14,6 +14,8 @@ pub struct DiaryLink<'a> {
     pub anchor: Option<Anchor<'a>>,
 }
 
+impl_located_borrowed_owned!(DiaryLink);
+
 impl DiaryLink<'_> {
     pub fn to_borrowed(&self) -> DiaryLink {
         let date = self.date;

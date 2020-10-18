@@ -21,6 +21,8 @@ pub struct RawLink<'a> {
     pub uri: URI<'a>,
 }
 
+impl_located_borrowed_owned!(RawLink);
+
 impl RawLink<'_> {
     pub fn to_borrowed(&self) -> RawLink {
         RawLink {

@@ -8,20 +8,25 @@ use vimwiki_macros::*;
 /// 2. Moves the located element to the specified line
 /// 3. Pushes its column out by one so we cover newlines without needing to include them
 fn adjust<'a>(
-    le: impl Into<Located<BlockElement<'a>>>,
+    le: impl Into<Located<'a, BlockElement<'a>>>,
     line: usize,
-) -> Located<BlockElement<'a>> {
-    let mut le = le.into().take_at_line(line);
-    le.region.end.column += 1;
-    le
+) -> Located<'a, BlockElement<'a>> {
+    let le = le.into().take_at_line(line);
+    let mut region: Region = le.lazy_region().into();
+    region.end.column += 1;
+
+    Located::new(le.into_inner(), region)
 }
 
 #[test]
 fn test() {
+    vimwiki::timekeeper::enable();
     let language = Language::from_vimwiki_string(
         VimwikiFile::PandocVimwikiReader.load().unwrap(),
     );
     let page: Page = language.parse().unwrap();
+    vimwiki::timekeeper::print_report(true);
+    vimwiki::timekeeper::disable();
 
     let expected = vec![
         adjust(vimwiki_header!("= _*implemented*_ ="), 1),

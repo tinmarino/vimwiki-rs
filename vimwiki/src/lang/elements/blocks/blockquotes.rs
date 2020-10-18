@@ -9,6 +9,8 @@ pub struct Blockquote<'a> {
     pub lines: Vec<Cow<'a, str>>,
 }
 
+impl_located_borrowed_owned!(Blockquote);
+
 impl Blockquote<'_> {
     pub fn to_borrowed(&self) -> Blockquote {
         use self::Cow::*;

@@ -40,6 +40,8 @@ pub enum BlockElement<'a> {
     Table(Table<'a>),
 }
 
+impl_located_borrowed_owned!(BlockElement);
+
 impl BlockElement<'_> {
     pub fn to_borrowed(&self) -> BlockElement {
         match self {
@@ -107,8 +109,8 @@ impl<'a> BlockElement<'a> {
 
 macro_rules! le_mapping {
     ($type:ty) => {
-        impl<'a> From<Located<$type>> for Located<BlockElement<'a>> {
-            fn from(element: Located<$type>) -> Self {
+        impl<'a> From<Located<'a, $type>> for Located<'a, BlockElement<'a>> {
+            fn from(element: Located<'a, $type>) -> Self {
                 element.map(BlockElement::from)
             }
         }

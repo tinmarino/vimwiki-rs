@@ -14,6 +14,8 @@ pub enum Placeholder<'a> {
     },
 }
 
+impl_located_borrowed_owned!(Placeholder);
+
 impl Placeholder<'_> {
     pub fn to_borrowed(&self) -> Placeholder {
         use self::Cow::*;

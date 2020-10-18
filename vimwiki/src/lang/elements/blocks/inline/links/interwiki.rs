@@ -12,6 +12,8 @@ pub enum InterWikiLink<'a> {
     Named(NamedInterWikiLink<'a>),
 }
 
+impl_located_borrowed_owned!(InterWikiLink);
+
 impl InterWikiLink<'_> {
     pub fn to_borrowed(&self) -> InterWikiLink {
         match self {
@@ -77,6 +79,8 @@ pub struct IndexedInterWikiLink<'a> {
     pub link: WikiLink<'a>,
 }
 
+impl_located_borrowed_owned!(IndexedInterWikiLink);
+
 impl IndexedInterWikiLink<'_> {
     pub fn to_borrowed(&self) -> IndexedInterWikiLink {
         IndexedInterWikiLink {
@@ -114,6 +118,8 @@ pub struct NamedInterWikiLink<'a> {
     pub name: Cow<'a, str>,
     pub link: WikiLink<'a>,
 }
+
+impl_located_borrowed_owned!(NamedInterWikiLink);
 
 impl NamedInterWikiLink<'_> {
     pub fn to_borrowed(&self) -> NamedInterWikiLink {

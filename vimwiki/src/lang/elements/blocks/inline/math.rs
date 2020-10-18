@@ -17,6 +17,12 @@ pub struct MathInline<'a> {
     pub formula: Cow<'a, str>,
 }
 
+impl_located_borrowed_owned!(
+    MathInline,
+    MathInline::into_owned,
+    MathInline::as_borrowed
+);
+
 impl MathInline<'_> {
     pub fn as_borrowed(&self) -> MathInline {
         use self::Cow::*;

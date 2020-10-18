@@ -11,6 +11,8 @@ pub struct Header<'a> {
     pub centered: bool,
 }
 
+impl_located_borrowed_owned!(Header);
+
 impl Header<'_> {
     pub fn to_borrowed(&self) -> Header {
         Header {

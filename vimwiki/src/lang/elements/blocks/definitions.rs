@@ -87,6 +87,8 @@ pub struct DefinitionList<'a> {
     mapping: HashMap<Term<'a>, Vec<Definition<'a>>>,
 }
 
+impl_located_borrowed_owned!(DefinitionList);
+
 impl DefinitionList<'_> {
     pub fn to_borrowed(&self) -> DefinitionList {
         let mapping = self

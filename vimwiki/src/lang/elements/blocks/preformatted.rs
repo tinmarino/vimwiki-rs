@@ -9,6 +9,8 @@ pub struct PreformattedText<'a> {
     pub lines: Vec<Cow<'a, str>>,
 }
 
+impl_located_borrowed_owned!(PreformattedText);
+
 impl PreformattedText<'_> {
     pub fn to_borrowed(&self) -> PreformattedText {
         use self::Cow::*;

@@ -179,128 +179,137 @@ macro_rules! impl_from_language {
 
 // Top-level types
 impl_from_language!(Page<'a>, vimwiki::page);
-impl_from_language!(Located<BlockElement<'a>>, vimwiki::blocks::block_element);
 impl_from_language!(
-    Located<InlineElementContainer<'a>>,
+    Located<'a, BlockElement<'a>>,
+    vimwiki::blocks::block_element
+);
+impl_from_language!(
+    Located<'a, InlineElementContainer<'a>>,
     vimwiki::blocks::inline::inline_element_container
 );
 impl_from_language!(
-    Located<InlineElement<'a>>,
+    Located<'a, InlineElement<'a>>,
     vimwiki::blocks::inline::inline_element
 );
 
 // Blockquotes
 impl_from_language!(
-    Located<Blockquote<'a>>,
+    Located<'a, Blockquote<'a>>,
     vimwiki::blocks::blockquotes::blockquote
 );
 
 // Code
 impl_from_language!(
-    Located<CodeInline<'a>>,
+    Located<'a, CodeInline<'a>>,
     vimwiki::blocks::inline::code::code_inline
 );
 
 // Comments
 impl_from_language!(
-    Located<Comment<'a>>,
+    Located<'a, Comment<'a>>,
     vimwiki::blocks::inline::comments::comment
 );
 impl_from_language!(
-    Located<LineComment<'a>>,
+    Located<'a, LineComment<'a>>,
     vimwiki::blocks::inline::comments::line_comment
 );
 impl_from_language!(
-    Located<MultiLineComment<'a>>,
+    Located<'a, MultiLineComment<'a>>,
     vimwiki::blocks::inline::comments::multi_line_comment
 );
 
 // Definitions (NOTE: Generic LocatedElement def above handles term & def)
 impl_from_language!(
-    Located<DefinitionList<'a>>,
+    Located<'a, DefinitionList<'a>>,
     vimwiki::blocks::definitions::definition_list
 );
 // impl_from_language!(Located<Definition>, vimwiki::definition);
 // impl_from_language!(Located<Term>, vimwiki::term);
 
 // Dividers
-impl_from_language!(Located<Divider>, vimwiki::blocks::dividers::divider);
+impl_from_language!(Located<'a, Divider>, vimwiki::blocks::dividers::divider);
 
 // Headers
-impl_from_language!(Located<Header<'a>>, vimwiki::blocks::headers::header);
+impl_from_language!(Located<'a, Header<'a>>, vimwiki::blocks::headers::header);
 
 // Links
-impl_from_language!(Located<Link<'a>>, vimwiki::blocks::inline::links::link);
 impl_from_language!(
-    Located<DiaryLink<'a>>,
+    Located<'a, Link<'a>>,
+    vimwiki::blocks::inline::links::link
+);
+impl_from_language!(
+    Located<'a, DiaryLink<'a>>,
     vimwiki::blocks::inline::links::diary::diary_link
 );
 impl_from_language!(
-    Located<ExternalFileLink<'a>>,
+    Located<'a, ExternalFileLink<'a>>,
     vimwiki::blocks::inline::links::external::external_file_link
 );
 impl_from_language!(
-    Located<RawLink<'a>>,
+    Located<'a, RawLink<'a>>,
     vimwiki::blocks::inline::links::raw::raw_link
 );
 impl_from_language!(
-    Located<TransclusionLink<'a>>,
+    Located<'a, TransclusionLink<'a>>,
     vimwiki::blocks::inline::links::transclusion::transclusion_link
 );
 impl_from_language!(
-    Located<WikiLink<'a>>,
+    Located<'a, WikiLink<'a>>,
     vimwiki::blocks::inline::links::wiki::wiki_link
 );
 impl_from_language!(
-    Located<InterWikiLink<'a>>,
+    Located<'a, InterWikiLink<'a>>,
     vimwiki::blocks::inline::links::interwiki::inter_wiki_link
 );
 
 // Lists
-impl_from_language!(Located<List<'a>>, vimwiki::blocks::lists::list);
+impl_from_language!(Located<'a, List<'a>>, vimwiki::blocks::lists::list);
 
 // Math
 impl_from_language!(
-    Located<MathInline<'a>>,
+    Located<'a, MathInline<'a>>,
     vimwiki::blocks::inline::math::math_inline
 );
-impl_from_language!(Located<MathBlock<'a>>, vimwiki::blocks::math::math_block);
+impl_from_language!(
+    Located<'a, MathBlock<'a>>,
+    vimwiki::blocks::math::math_block
+);
 
 // Paragraphs
 impl_from_language!(
-    Located<Paragraph<'a>>,
+    Located<'a, Paragraph<'a>>,
     vimwiki::blocks::paragraphs::paragraph
 );
 
 // Placeholders
 impl_from_language!(
-    Located<Placeholder<'a>>,
+    Located<'a, Placeholder<'a>>,
     vimwiki::blocks::placeholders::placeholder
 );
 
 // Preformatted Text
 impl_from_language!(
-    Located<PreformattedText<'a>>,
+    Located<'a, PreformattedText<'a>>,
     vimwiki::blocks::preformatted::preformatted_text
 );
 
 // Tables
-impl_from_language!(Located<Table<'a>>, vimwiki::blocks::tables::table);
+impl_from_language!(Located<'a, Table<'a>>, vimwiki::blocks::tables::table);
 
 // Tags
-impl_from_language!(Located<Tags<'a>>, vimwiki::blocks::inline::tags::tags);
+impl_from_language!(Located<'a, Tags<'a>>, vimwiki::blocks::inline::tags::tags);
 
 // Typefaces
 impl_from_language!(
-    Located<Text<'a>>,
+    Located<'a, Text<'a>>,
     vimwiki::blocks::inline::typefaces::text
 );
 impl_from_language!(
-    Located<DecoratedText<'a>>,
+    Located<'a, DecoratedText<'a>>,
     vimwiki::blocks::inline::typefaces::decorated_text
 );
 impl_from_language!(
-    Located<Keyword>,
+    Located<'a, Keyword>,
     vimwiki::blocks::inline::typefaces::keyword
 );
 

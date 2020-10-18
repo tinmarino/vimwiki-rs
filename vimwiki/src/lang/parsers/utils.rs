@@ -1,5 +1,5 @@
 use crate::lang::{
-    elements::{Located, Position, Region},
+    elements::{LazyRegion, Located},
     parsers::{Captured, Error, IResult, Span},
 };
 use memchr::{memchr, memchr_iter};
@@ -10,7 +10,7 @@ use nom::{
     combinator::{map, map_res, not, recognize, rest, rest_len, value, verify},
     multi::{many0, many1},
     sequence::{pair, preceded, terminated},
-    AsBytes, InputLength, InputTake,
+    AsBytes, InputLength, InputTake, Offset,
 };
 use std::{borrow::Cow, convert::TryFrom, path::Path};
 use uriparse::URI;
@@ -38,12 +38,14 @@ pub fn locate<'a, T>(
     parser: impl Fn(Span<'a>) -> IResult<Captured<T>>,
 ) -> impl Fn(Span<'a>) -> IResult<Located<T>> {
     context("Locate", move |input: Span| {
+        let old_input = input;
         let (input, c) = parser(input)?;
-        let start_pos = Position::new(c.input().line(), c.input().column());
-        let end_pos = Position::new(c.input().line(), c.input().column());
-        let region = Region::new(start_pos, end_pos);
+        let old_input = old_input.with_length(old_input.offset(&input));
 
-        Ok((input, Located::new(c.into_inner(), region)))
+        Ok((
+            input,
+            Located::new(c.into_inner(), LazyRegion::Borrowed(old_input)),
+        ))
     })
 }
 

@@ -17,6 +17,12 @@ pub struct CodeInline<'a> {
     pub code: Cow<'a, str>,
 }
 
+impl_located_borrowed_owned!(
+    CodeInline,
+    CodeInline::into_owned,
+    CodeInline::as_borrowed
+);
+
 impl CodeInline<'_> {
     pub fn as_borrowed(&self) -> CodeInline {
         use self::Cow::*;

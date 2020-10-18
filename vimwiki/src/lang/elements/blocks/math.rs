@@ -10,6 +10,8 @@ pub struct MathBlock<'a> {
     pub environment: Option<Cow<'a, str>>,
 }
 
+impl_located_borrowed_owned!(MathBlock);
+
 impl MathBlock<'_> {
     pub fn to_borrowed(&self) -> MathBlock {
         use self::Cow::*;

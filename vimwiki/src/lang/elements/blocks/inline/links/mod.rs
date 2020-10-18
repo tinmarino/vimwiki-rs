@@ -169,6 +169,8 @@ pub enum Link<'a> {
     Transclusion(TransclusionLink<'a>),
 }
 
+impl_located_borrowed_owned!(Link);
+
 impl Link<'_> {
     pub fn to_borrowed(&self) -> Link {
         match self {

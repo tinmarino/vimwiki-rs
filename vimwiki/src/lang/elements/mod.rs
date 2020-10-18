@@ -1,10 +1,47 @@
 use derive_more::{Constructor, From};
 use serde::{Deserialize, Serialize};
 
+macro_rules! impl_located_borrowed_owned {
+    ($type:ty, $owned_type:ty, $owned_func:expr, $borrow_func:expr) => {
+        impl crate::lang::elements::Located<'_, $type> {
+            pub fn to_borrowed(
+                &self,
+            ) -> crate::lang::elements::Located<'_, $type> {
+                self.as_ref().map($borrow_func)
+            }
+
+            pub fn into_owned(
+                self,
+            ) -> crate::lang::elements::Located<'static, $owned_type> {
+                let region = self.lazy_region().into_owned();
+                crate::lang::elements::Located::new(
+                    $owned_func(self.into_inner()),
+                    region,
+                )
+            }
+        }
+    };
+    ($type:ident, $owned_func:expr, $borrow_func:expr) => {
+        impl_located_borrowed_owned!(
+            $type<'_>,
+            $type<'static>,
+            $owned_func,
+            $borrow_func
+        );
+    };
+    ($type:ident) => {
+        impl_located_borrowed_owned!(
+            $type,
+            $type::into_owned,
+            $type::to_borrowed
+        );
+    };
+}
+
 mod blocks;
 pub use blocks::*;
 mod location;
-pub use location::{Located, Position, Region};
+pub use location::{LazyRegion, Located, Position, Region};
 
 /// Represents a full page containing different elements
 #[derive(
@@ -12,7 +49,7 @@ pub use location::{Located, Position, Region};
 )]
 pub struct Page<'a> {
     /// Comprised of the elements within a page
-    pub elements: Vec<Located<BlockElement<'a>>>,
+    pub elements: Vec<Located<'a, BlockElement<'a>>>,
 }
 
 impl Page<'_> {
@@ -30,7 +67,7 @@ impl Page<'_> {
         let elements = self
             .elements
             .into_iter()
-            .map(|x| x.map(BlockElement::into_owned))
+            .map(|x| x.into_owned().map(BlockElement::into_owned))
             .collect();
 
         Page { elements }

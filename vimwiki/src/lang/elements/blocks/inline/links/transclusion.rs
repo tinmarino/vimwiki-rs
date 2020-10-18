@@ -18,6 +18,8 @@ pub struct TransclusionLink<'a> {
     pub properties: HashMap<Cow<'a, str>, Cow<'a, str>>,
 }
 
+impl_located_borrowed_owned!(TransclusionLink);
+
 impl TransclusionLink<'_> {
     pub fn to_borrowed(&self) -> TransclusionLink {
         use self::Cow::*;

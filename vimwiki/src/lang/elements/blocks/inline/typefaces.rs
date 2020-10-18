@@ -20,6 +20,8 @@ use std::{borrow::Cow, fmt};
 )]
 pub struct Text<'a>(pub Cow<'a, str>);
 
+impl_located_borrowed_owned!(Text, Text::into_owned, Text::as_borrowed);
+
 impl Text<'_> {
     pub fn as_borrowed(&self) -> Text {
         use self::Cow::*;
@@ -61,6 +63,8 @@ pub enum DecoratedTextContent<'a> {
     Keyword(Keyword),
     Link(Link<'a>),
 }
+
+impl_located_borrowed_owned!(DecoratedTextContent);
 
 impl DecoratedTextContent<'_> {
     pub fn to_borrowed(&self) -> DecoratedTextContent {
@@ -108,13 +112,15 @@ impl<'a> DecoratedTextContent<'a> {
 /// Represents text (series of content) with a typeface decoration
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum DecoratedText<'a> {
-    Bold(Vec<Located<DecoratedTextContent<'a>>>),
-    Italic(Vec<Located<DecoratedTextContent<'a>>>),
-    BoldItalic(Vec<Located<DecoratedTextContent<'a>>>),
-    Strikeout(Vec<Located<DecoratedTextContent<'a>>>),
-    Superscript(Vec<Located<DecoratedTextContent<'a>>>),
-    Subscript(Vec<Located<DecoratedTextContent<'a>>>),
+    Bold(Vec<Located<'a, DecoratedTextContent<'a>>>),
+    Italic(Vec<Located<'a, DecoratedTextContent<'a>>>),
+    BoldItalic(Vec<Located<'a, DecoratedTextContent<'a>>>),
+    Strikeout(Vec<Located<'a, DecoratedTextContent<'a>>>),
+    Superscript(Vec<Located<'a, DecoratedTextContent<'a>>>),
+    Subscript(Vec<Located<'a, DecoratedTextContent<'a>>>),
 }
+
+impl_located_borrowed_owned!(DecoratedText);
 
 impl DecoratedText<'_> {
     pub fn to_borrowed(&self) -> DecoratedText {
@@ -143,9 +149,7 @@ impl DecoratedText<'_> {
     pub fn into_owned(self) -> DecoratedText<'static> {
         macro_rules! vec_into_owned {
             ($vec:expr) => {
-                $vec.into_iter()
-                    .map(|x| x.map(DecoratedTextContent::into_owned))
-                    .collect()
+                $vec.into_iter().map(|x| x.into_owned()).collect()
             };
         }
 
@@ -217,3 +221,11 @@ pub enum Keyword {
     FIXED,
     XXX,
 }
+
+impl Keyword {
+    pub fn identity(other: Self) -> Self {
+        other
+    }
+}
+
+impl_located_borrowed_owned!(Keyword, Keyword, Keyword::identity, |x| *x);

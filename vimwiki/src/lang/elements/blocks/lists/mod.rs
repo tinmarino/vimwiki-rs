@@ -12,27 +12,21 @@ pub use item::*;
     Constructor, Clone, Debug, From, Eq, PartialEq, Serialize, Deserialize,
 )]
 pub struct List<'a> {
-    pub items: Vec<Located<ListItem<'a>>>,
+    pub items: Vec<Located<'a, ListItem<'a>>>,
 }
+
+impl_located_borrowed_owned!(List);
 
 impl List<'_> {
     pub fn to_borrowed(&self) -> List {
         List {
-            items: self
-                .items
-                .iter()
-                .map(|x| x.as_ref().map(ListItem::to_borrowed))
-                .collect(),
+            items: self.items.iter().map(|x| x.to_borrowed()).collect(),
         }
     }
 
     pub fn into_owned(self) -> List<'static> {
         List {
-            items: self
-                .items
-                .into_iter()
-                .map(|x| x.map(ListItem::into_owned))
-                .collect(),
+            items: self.items.into_iter().map(|x| x.into_owned()).collect(),
         }
     }
 }
@@ -86,6 +80,8 @@ pub enum ListItemContent<'a> {
     List(List<'a>),
 }
 
+impl_located_borrowed_owned!(ListItemContent);
+
 impl ListItemContent<'_> {
     pub fn to_borrowed(&self) -> ListItemContent {
         match self {
@@ -123,17 +119,13 @@ impl ListItemContent<'_> {
     Deserialize,
 )]
 pub struct ListItemContents<'a> {
-    pub contents: Vec<Located<ListItemContent<'a>>>,
+    pub contents: Vec<Located<'a, ListItemContent<'a>>>,
 }
 
 impl ListItemContents<'_> {
     pub fn to_borrowed(&self) -> ListItemContents {
         ListItemContents {
-            contents: self
-                .contents
-                .iter()
-                .map(|x| x.as_ref().map(ListItemContent::to_borrowed))
-                .collect(),
+            contents: self.contents.iter().map(|x| x.to_borrowed()).collect(),
         }
     }
 
@@ -142,7 +134,7 @@ impl ListItemContents<'_> {
             contents: self
                 .contents
                 .into_iter()
-                .map(|x| x.map(ListItemContent::into_owned))
+                .map(|x| x.into_owned())
                 .collect(),
         }
     }
@@ -204,7 +196,7 @@ impl<'a> ListItemContents<'a> {
                     .collect(),
                 ListItemContent::List(list) => vec![Located::new(
                     Element::from(list.to_borrowed()),
-                    x.region,
+                    x.lazy_region(),
                 )],
             })
             .collect()

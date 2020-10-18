@@ -34,6 +34,8 @@ use std::{borrow::Cow, fmt};
 )]
 pub struct Tags<'a>(pub Vec<Tag<'a>>);
 
+impl_located_borrowed_owned!(Tags);
+
 impl Tags<'_> {
     pub fn to_borrowed(&self) -> Tags {
         let inner = self.0.iter().map(Tag::as_borrowed).collect();
@@ -92,6 +94,8 @@ impl<'a> From<&'a str> for Tags<'a> {
     Deserialize,
 )]
 pub struct Tag<'a>(pub Cow<'a, str>);
+
+impl_located_borrowed_owned!(Tag, Tag::into_owned, Tag::as_borrowed);
 
 impl Tag<'_> {
     pub fn as_borrowed(&self) -> Tag {

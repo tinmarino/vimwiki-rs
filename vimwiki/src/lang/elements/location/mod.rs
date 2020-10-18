@@ -1,4 +1,5 @@
-use derive_more::{Constructor, Deref, DerefMut, Display};
+use crate::lang::parsers::Span;
+use derive_more::{Deref, DerefMut, Display, From};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
@@ -9,70 +10,49 @@ pub use region::Region;
 
 /// Represents an encapsulation of a language element and its location
 /// within some string/file
-#[derive(
-    Constructor,
-    Clone,
-    Debug,
-    Display,
-    Deref,
-    DerefMut,
-    Eq,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Clone, Debug, Display, Deref, DerefMut, Eq, Serialize, Deserialize)]
 #[display(fmt = "{}", element)]
-pub struct Located<T> {
+pub struct Located<'a, T> {
     #[deref]
     #[deref_mut]
     pub element: T,
-    pub region: Region,
+    lazy_region: LazyRegion<'a>,
 }
 
-impl<T> Located<T> {
+impl<'a, T> Located<'a, T> {
+    pub fn new(inner: T, lazy_region: impl Into<LazyRegion<'a>>) -> Self {
+        Self {
+            element: inner,
+            lazy_region: lazy_region.into(),
+        }
+    }
+
     /// Maps a `Located<T>` to `Located<U>` by applying a
     /// function to the underlying element. Useful when upleveling the
     /// element (such as wrapping a Header1) while the region remains
     /// unchanged.
     #[inline]
-    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Located<U> {
-        Located::new(f(self.element), self.region)
-    }
-
-    /// Wraps a function that would transform some input into a type `T` such
-    /// that the higher-order function will transform some input into a
-    /// `Located<T>` (with default region).
-    #[inline]
-    pub fn wrap<U>(f: impl Fn(U) -> T) -> impl Fn(U) -> Self {
-        Self::wrap_with_region(Default::default(), f)
-    }
-
-    /// Wraps a function that would transform some input into a type `T` such
-    /// that the higher-order function will transform some input into a
-    /// `Located<T>`.
-    #[inline]
-    pub fn wrap_with_region<U>(
-        region: Region,
-        f: impl Fn(U) -> T,
-    ) -> impl Fn(U) -> Self {
-        move |input| {
-            let element = f(input);
-            Self::new(element, region)
-        }
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Located<'a, U> {
+        Located::new(f(self.element), self.lazy_region)
     }
 
     /// Takes a `Located` and replaces its region, producing the
     /// updated region. This takes ownership of the existing element!
-    pub fn take_with_region(mut self, region: Region) -> Self {
-        self.region = region;
-        self
+    pub fn take_with_region<'b>(
+        self,
+        lazy_region: impl Into<LazyRegion<'b>>,
+    ) -> Located<'b, T> {
+        Located::new(self.element, lazy_region.into())
     }
 
     /// Takes a `Located` and shifts its region such that it starts
     /// at the specified line. This takes ownership of the existing element!
     pub fn take_at_line(mut self, line: usize) -> Self {
-        let diff = self.region.end.line - self.region.start.line;
-        self.region.start.line = line;
-        self.region.end.line = line + diff;
+        let mut region: Region = self.lazy_region.into();
+        let diff = region.end.line - region.start.line;
+        region.start.line = line;
+        region.end.line = line + diff;
+        self.lazy_region = LazyRegion::Owned(region);
         self
     }
 
@@ -80,7 +60,7 @@ impl<T> Located<T> {
     pub fn as_ref(&self) -> Located<&T> {
         Located {
             element: &self.element,
-            region: self.region,
+            lazy_region: self.lazy_region,
         }
     }
 
@@ -88,7 +68,7 @@ impl<T> Located<T> {
     pub fn as_mut(&mut self) -> Located<&mut T> {
         Located {
             element: &mut self.element,
-            region: self.region,
+            lazy_region: self.lazy_region,
         }
     }
 
@@ -106,30 +86,82 @@ impl<T> Located<T> {
     pub fn into_inner(self) -> T {
         self.element
     }
+
+    /// Returns the lazy region contained within this located instance
+    pub fn lazy_region(&self) -> LazyRegion<'a> {
+        self.lazy_region
+    }
 }
 
-impl<T: PartialEq> PartialEq for Located<T> {
+impl<'a, T: PartialEq> PartialEq for Located<'a, T> {
     fn eq(&self, other: &Self) -> bool {
         self.element == other.element
     }
 }
 
-impl<T: PartialEq> PartialEq<T> for Located<T> {
+impl<'a, T: PartialEq> PartialEq<T> for Located<'a, T> {
     fn eq(&self, other: &T) -> bool {
         &self.element == other
     }
 }
 
-impl<T: Hash> Hash for Located<T> {
+impl<'a, T: Hash> Hash for Located<'a, T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.element.hash(state);
     }
 }
 
-impl<T> From<T> for Located<T> {
+impl<'a, T> From<T> for Located<'a, T> {
     /// Creates a new located element around `T`, using a default location
     fn from(t: T) -> Self {
-        Self::new(t, Default::default())
+        Self::new(t, LazyRegion::default())
+    }
+}
+
+/// Represents a region whose line and column are lazily calculated
+///
+/// - Serializing involves the expensive calcuation of the line/column
+/// - Deserializing will always yield a pre-calculated, owned instance
+#[derive(Copy, Clone, Debug, From, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(from = "Region", into = "Region")]
+pub enum LazyRegion<'a> {
+    Borrowed(Span<'a>),
+    Owned(Region),
+}
+
+impl LazyRegion<'_> {
+    pub fn into_owned(self) -> LazyRegion<'static> {
+        LazyRegion::Owned(self.into())
+    }
+}
+
+impl<'a> Default for LazyRegion<'a> {
+    fn default() -> Self {
+        Self::Owned(Default::default())
+    }
+}
+
+impl<'a> From<LazyRegion<'a>> for Region {
+    fn from(lazy_region: LazyRegion<'a>) -> Self {
+        match lazy_region {
+            LazyRegion::Borrowed(span) => span.into(),
+            LazyRegion::Owned(region) => region,
+        }
+    }
+}
+
+impl<'a> From<Span<'a>> for Region {
+    fn from(span: Span<'a>) -> Self {
+        let start_pos = Position::new(span.line(), span.column());
+
+        let span = if span.remaining_len() > 0 {
+            span.starting_at(span.remaining_len() - 1)
+        } else {
+            span
+        };
+        let end_pos = Position::new(span.line(), span.column());
+
+        Region::new(start_pos, end_pos)
     }
 }
 
@@ -139,29 +171,14 @@ mod tests {
     use std::collections::HashSet;
 
     #[test]
-    fn located_element_map_should_transform_inner_element_and_keep_region() {
+    fn map_should_transform_inner_element_and_keep_region() {
         let le = Located::new(3, Region::from(((1, 2), (3, 4))));
         let mapped_le = le.map(|c| c + 1);
         assert_eq!(mapped_le.element, 4);
-        assert_eq!(mapped_le.region, Region::from(((1, 2), (3, 4))));
-    }
-
-    #[test]
-    fn located_element_wrap_should_apply_function_and_wrap_in_default_region() {
-        let le = Located::wrap(|x: usize| x.to_string())(3);
-        assert_eq!(le.element, String::from("3"));
-        assert_eq!(le.region, Region::default());
-    }
-
-    #[test]
-    fn located_element_wrap_with_region_should_apply_function_and_wrap_in_provided_region(
-    ) {
-        let le = Located::wrap_with_region(
-            Region::from(((1, 2), (3, 4))),
-            |x: usize| x.to_string(),
-        )(3);
-        assert_eq!(le.element, String::from("3"));
-        assert_eq!(le.region, Region::from(((1, 2), (3, 4))));
+        assert_eq!(
+            Region::from(mapped_le.lazy_region()),
+            Region::from(((1, 2), (3, 4)))
+        );
     }
 
     #[test]
@@ -195,7 +212,10 @@ mod tests {
             .get(&le2)
             .expect("Failed to retrieve Located with another Located");
         assert_eq!(le.element, 3);
-        assert_eq!(le.region, Region::from(((1, 2), (3, 4))));
+        assert_eq!(
+            Region::from(le.lazy_region()),
+            Region::from(((1, 2), (3, 4)))
+        );
 
         assert_eq!(m.get(&le3), None);
 
@@ -203,7 +223,10 @@ mod tests {
             .get(&le4)
             .expect("Failed to retrieve Located with another Located");
         assert_eq!(le.element, 3);
-        assert_eq!(le.region, Region::from(((1, 2), (3, 4))));
+        assert_eq!(
+            Region::from(le.lazy_region()),
+            Region::from(((1, 2), (3, 4)))
+        );
     }
 
     #[test]
@@ -216,7 +239,10 @@ mod tests {
         let le_ref = le.as_ref();
 
         assert_eq!(le_ref.element, &Test(5));
-        assert_eq!(le_ref.region, Region::from(((1, 2), (3, 4))));
+        assert_eq!(
+            Region::from(le_ref.lazy_region()),
+            Region::from(((1, 2), (3, 4)))
+        );
     }
 
     #[test]
@@ -229,7 +255,10 @@ mod tests {
         let le_mut = le.as_mut();
 
         assert_eq!(le_mut.element, &mut Test(5));
-        assert_eq!(le_mut.region, Region::from(((1, 2), (3, 4))));
+        assert_eq!(
+            Region::from(le_mut.lazy_region()),
+            Region::from(((1, 2), (3, 4)))
+        );
     }
 
     #[test]

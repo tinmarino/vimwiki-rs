@@ -16,6 +16,8 @@ pub struct ListItem<'a> {
     pub attributes: ListItemAttributes,
 }
 
+impl_located_borrowed_owned!(ListItem);
+
 impl ListItem<'_> {
     pub fn to_borrowed(&self) -> ListItem {
         ListItem {
